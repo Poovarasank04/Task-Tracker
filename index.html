@@ -1,129 +1,259 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Goal Mountain Pro++</title>
+<title>Goal Mountain Pro++</title>
 
-  <style>
-    body {
-      margin: 0;
-      background: linear-gradient(135deg, #020617, #0f172a);
-      color: white;
-      font-family: system-ui;
-    }
+<script src="https://unpkg.com/lucide@latest"></script>
 
-    .app { display: flex; height: 100vh; }
+<style>
+body {
+  margin: 0;
+  background: linear-gradient(135deg, #020617, #0f172a);
+  color: white;
+  font-family: system-ui;
+}
 
-    .sidebar {
-      width: 260px;
-      background: rgba(255,255,255,0.05);
-      padding: 15px;
-      border-right: 1px solid rgba(255,255,255,0.1);
-    }
+/* NAVBAR */
+.navbar {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 8px;
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  font-weight: bold;
+}
 
-    .goal {
-      padding: 10px;
-      margin: 5px 0;
-      background: rgba(255,255,255,0.08);
-      border-radius: 8px;
-      cursor: pointer;
-    }
+/* LAYOUT */
+.app {
+  display: flex;
+  height: calc(100vh - 60px);
+}
 
-    .goal.active { background: #22c55e; }
+.goalIcon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  filter: brightness(1.2); /* makes it visible on dark bg */
+}
 
-    .main { flex: 1; padding: 20px; position: relative; }
+/* SIDEBAR */
+.sidebar {
+  width: 260px;
+  background: rgba(255,255,255,0.05);
+  padding: 15px;
+  border-right: 1px solid rgba(255,255,255,0.1);
+}
 
-    input, button {
-      padding: 8px;
-      border-radius: 6px;
-      border: none;
-      margin: 5px;
-    }
+.goal {
+  padding: 10px;
+  margin: 5px 0;
+  background: rgba(220, 208, 208, 0.08);
+  border-radius: 8px;
+  cursor: pointer;
+}
 
-    button { background: #22c55e; color: white; cursor: pointer; }
+.goal.active {
+  background: #16a34a;
+}
 
-    svg {
-      width: 100%;
-      height: 340px;
-      background: #020617;
-      border-radius: 12px;
-    }
+.goalItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-    .stats {
-      display: flex;
-      justify-content: space-around;
-      margin-top: 20px;
-      padding: 15px;
-      background: rgba(255,255,255,0.05);
-      border-radius: 12px;
-    }
+.goal.active img {
+  filter: brightness(2);
+}
 
-    .legend {
-      position: absolute;
-      right: 30px;
-      top: 120px;
-      background: rgba(255,255,255,0.05);
-      padding: 10px;
-      border-radius: 10px;
-    }
+/* FIX ICON SIZE */
+svg.lucide {
+  width: 18px;
+  height: 18px;
+}
 
-    .dot { width: 10px; height: 10px; display: inline-block; border-radius: 50%; }
-    .green { background: #22c55e; }
-    .yellow { background: #facc15; }
-    .gray { background: #64748b; }
+/* SEGMENT BATTERY */
+.battery {
+  width: 100%;
+  height: 40px;
+  border: 2px solid #64748b;
+  border-radius: 10px;
+  padding: 4px;
+  display: flex;
+  gap: 4px;
+  margin-top: 20px;
+}
 
-    .progressBox { text-align: center; margin-top: 20px; }
-  </style>
+.battery-level {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+}
+
+.segment {
+  flex: 1;
+  background: #1e293b;
+  border-radius: 4px;
+}
+
+.red { background: #ef4444; }
+.yellow { background: #facc15; }
+.green { background: #22c55e; }
+
+.batteryText {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #e2e8f0;
+}
+
+/* MAIN */
+.main {
+  flex: 1;
+  padding: 20px;
+}
+
+input, button {
+  padding: 8px;
+  border-radius: 6px;
+  border: none;
+  margin: 5px;
+}
+
+button {
+  background: #16a34a;
+  color: white;
+}
+
+/* GRAPH */
+svg {
+  width: 100%;
+  height: 340px;
+  background: #020617;
+  border-radius: 12px;
+}
+
+.goalInput{
+  background: rgba(220, 208, 208, 0.08);
+}
+
+/* STATS */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.05);
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+}
+
+.logoImg {
+  height: 26px;   /* was ~34 → reduced */
+  width: auto;
+  object-fit: contain;
+
+  margin-right: 6px;
+
+  /* keep it sharp but not glowing too much */
+  filter: brightness(1.05) contrast(1.05);
+   height: 32px;
+  opacity: 0.9;
+  filter: drop-shadow(0 0 6px rgba(34,197,94,0.3));
+}
+
+.value {
+  font-size: 18px;
+  font-weight: bold;
+  color: #e2e8f0;
+}
+
+.label {
+  font-size: 12px;
+  color: #94a3b8;
+}
+</style>
 </head>
 
 <body>
 
+<div class="navbar">
+  <img src="icons/mountain.png" class="logoImg">
+  <span>Goal Mountain Pro++</span>
+</div>
+
 <div class="app">
 
-  <div class="sidebar">
-    <h3>Goals</h3>
-    <input id="goalInput" placeholder="New goal">
-    <button onclick="addGoal()">Add</button>
-    <div id="goalList"></div>
+<div class="sidebar">
+  <h3>Goals</h3>
+  <input class="goalInput" id="goalInput" placeholder="New goal">
+  <button onclick="addGoal()">Add</button>
+  <div id="goalList"></div>
 
-    <div class="progressBox">
-      <svg width="100" height="100">
-        <circle cx="50" cy="50" r="40" stroke="#334155" stroke-width="8" fill="none"/>
-        <circle id="progressCircle" cx="50" cy="50" r="40"
-          stroke="#22c55e" stroke-width="8" fill="none"
-          stroke-dasharray="251"
-          stroke-dashoffset="251"
-          transform="rotate(-90 50 50)"
-        />
-      </svg>
-      <div id="progressText">0%</div>
+  <div class="battery">
+    <div class="battery-level" id="batteryLevel"></div>
+  </div>
+
+  <div id="batteryText" class="batteryText">0%</div>
+</div>
+
+<div class="main">
+
+  <h2 id="goalTitle">Select Goal</h2>
+
+  <input class="goalInput" id="taskName" placeholder="Task">
+  <input class="goalInput" id="difficulty" type="number" placeholder="1-10">
+  <button onclick="addTask()">Add Task</button>
+
+  <svg id="mountain"></svg>
+
+  <div class="stats">
+    <div class="card">
+      <i data-lucide="check-circle" class="icon"></i>
+      <div>
+        <div class="label">Completed</div>
+        <div class="value" id="completedCount">0</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <i data-lucide="zap" class="icon"></i>
+      <div>
+        <div class="label">Current</div>
+        <div class="value" id="currentTask">-</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <i data-lucide="clock" class="icon"></i>
+      <div>
+        <div class="label">Pending</div>
+        <div class="value" id="pendingCount">0</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <i data-lucide="activity" class="icon"></i>
+      <div>
+        <div class="label">Progress</div>
+        <div class="value" id="progressPercent">0%</div>
+      </div>
     </div>
   </div>
 
-  <div class="main">
-
-    <h2 id="goalTitle">Select Goal</h2>
-
-    <input id="taskName" placeholder="Task">
-    <input id="difficulty" type="number" placeholder="1-10">
-    <button onclick="addTask()">Add Task</button>
-
-    <svg id="mountain"></svg>
-
-    <div class="legend">
-      <div><span class="dot green"></span> Completed</div>
-      <div><span class="dot yellow"></span> Current</div>
-      <div><span class="dot gray"></span> Pending</div>
-    </div>
-
-    <div class="stats">
-      <div>Completed: <span id="completedCount">0</span></div>
-      <div>Current: <span id="currentTask">-</span></div>
-      <div>Pending: <span id="pendingCount">0</span></div>
-      <div>Progress: <span id="progressPercent">0%</span></div>
-    </div>
-
-  </div>
-
+</div>
 </div>
 
 <script>
@@ -135,20 +265,29 @@ function addGoal() {
   if (!name) return;
   goals.push({ title: name, tasks: [] });
   goalInput.value = "";
-  save(); renderGoals();
+  save();
+  renderGoals();
 }
 
 function renderGoals() {
   goalList.innerHTML = "";
+
   goals.forEach((g, i) => {
     const div = document.createElement("div");
     div.className = "goal " + (i === currentGoalIndex ? "active" : "");
-    div.innerText = g.title;
+
+    div.innerHTML = `
+      <div class="goalItem">
+        <img src="icons/goal.png" class="goalIcon"> ${g.title}
+      </div>
+    `;
+
     div.onclick = () => {
       currentGoalIndex = i;
       renderGoals();
       renderMountain();
     };
+
     goalList.appendChild(div);
   });
 }
@@ -170,22 +309,29 @@ function addTask() {
   renderMountain();
 }
 
-function getPoints(tasks, width) {
-  const padding = 60;
-  const usableWidth = width - padding * 2;
+function updateBattery(progress) {
+  const level = document.getElementById("batteryLevel");
+  const text = document.getElementById("batteryText");
 
-  return tasks.map((t, i) => {
-    const x = tasks.length === 1
-      ? width / 2
-      : padding + (i / (tasks.length - 1)) * usableWidth;
+  level.innerHTML = "";
 
-    const variation = Math.random() * 20 - 10;
-    const peakBoost = Math.pow(t.difficulty / 10, 2) * 40;
+  const segments = 5;
+  const active = Math.round(progress * segments);
 
-    const y = 300 - (t.difficulty / 10) * 200 - peakBoost + variation;
+  let color = "green";
+  if (progress === 0) color = "red";
+  else if (progress < 0.5) color = "yellow";
 
-    return { x, y };
-  });
+  for (let i = 0; i < segments; i++) {
+    const div = document.createElement("div");
+    div.className = "segment";
+
+    if (i < active) div.classList.add(color);
+
+    level.appendChild(div);
+  }
+
+  text.innerText = Math.round(progress * 100) + "%";
 }
 
 function renderMountain() {
@@ -197,49 +343,69 @@ function renderMountain() {
   const goal = goals[currentGoalIndex];
   goalTitle.innerText = goal.title;
 
-  const points = getPoints(goal.tasks, svg.clientWidth);
-  if (!points.length) return;
+  const tasks = goal.tasks;
+  if (!tasks.length) {
+    updateBattery(0);
+    return;
+  }
 
-  const firstPending = goal.tasks.findIndex(t => !t.done);
+  const width = svg.clientWidth;
+  const height = 340;
 
-  // Gradient
+  const padding = 60;
+  const usableWidth = width - padding * 2;
+
+  // 🔥 CREATE POINTS
+  const points = tasks.map((t, i) => {
+    const x = tasks.length === 1
+      ? width / 2
+      : padding + (i / (tasks.length - 1)) * usableWidth;
+
+    const y = height - (t.difficulty / 10) * 220 - 40;
+
+    return { x, y };
+  });
+
+  // 🔥 GRADIENT
   const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
   defs.innerHTML = `
     <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#22c55e" stop-opacity="0.7"/>
-      <stop offset="100%" stop-color="#22c55e" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#22c55e" stop-opacity="0.05"/>
     </linearGradient>`;
   svg.appendChild(defs);
 
-  let path = `M ${points[0].x} ${points[0].y}`;
-  for (let i = 1; i < points.length; i++) {
-    path += ` L ${points[i].x} ${points[i].y}`;
-  }
-  path += ` L ${points[points.length - 1].x} 340 L 0 340 Z`;
+  // 🔥 SHARP MOUNTAIN PATH
+  let path = `M 0 ${height}`;
+
+  points.forEach(p => {
+    path += ` L ${p.x} ${p.y}`;
+  });
+
+  path += ` L ${points[points.length - 1].x} ${height} Z`;
 
   const mountain = document.createElementNS("http://www.w3.org/2000/svg", "path");
   mountain.setAttribute("d", path);
   mountain.setAttribute("fill", "url(#grad)");
   svg.appendChild(mountain);
 
-  let completed = goal.tasks.filter(t => t.done).length;
-  let progress = completed / goal.tasks.length || 0;
-
-  // vertical lines
+  // 🔥 VERTICAL LINES
   points.forEach(p => {
     const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
     line.setAttribute("x1", p.x);
     line.setAttribute("y1", p.y);
     line.setAttribute("x2", p.x);
-    line.setAttribute("y2", 340);
+    line.setAttribute("y2", height);
     line.setAttribute("stroke", "#334155");
     line.setAttribute("stroke-dasharray", "4");
     svg.appendChild(line);
   });
 
-  // points
+  // 🔥 POINTS + CLICK LOGIC
+  const firstPending = tasks.findIndex(t => !t.done);
+
   points.forEach((p, i) => {
-    const task = goal.tasks[i];
+    const task = tasks[i];
 
     const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     circle.setAttribute("cx", p.x);
@@ -258,34 +424,40 @@ function renderMountain() {
     }
 
     circle.onclick = () => {
-      if (i === firstPending) goal.tasks[i].done = true;
-      else if (i === firstPending - 1) goal.tasks[i].done = false;
+      if (i === firstPending) task.done = true;
+      else if (i === firstPending - 1) task.done = false;
       save();
       renderMountain();
     };
 
     svg.appendChild(circle);
 
+    // LABEL
     const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
     text.setAttribute("x", p.x);
     text.setAttribute("y", p.y - 10);
     text.setAttribute("text-anchor", "middle");
-    text.setAttribute("fill", "white");
-    text.setAttribute("font-size", "10");
+    text.setAttribute("fill", "#e2e8f0");
+    text.setAttribute("font-size", "12");
+    text.setAttribute("font-weight", "600");
     text.textContent = task.name.slice(0, 10);
     svg.appendChild(text);
   });
 
-  // stats
+  // 🔥 STATS
+  const completed = tasks.filter(t => t.done).length;
+  const progress = completed / tasks.length;
+
   completedCount.innerText = completed;
-  pendingCount.innerText = goal.tasks.length - completed;
+  pendingCount.innerText = tasks.length - completed;
   currentTask.innerText =
-    firstPending !== -1 ? goal.tasks[firstPending].name : "Done";
+    firstPending !== -1 ? tasks[firstPending].name : "Done";
   progressPercent.innerText = Math.round(progress * 100) + "%";
 
-  const offset = 251 - (251 * progress);
-  progressCircle.setAttribute("stroke-dashoffset", offset);
-  progressText.innerText = Math.round(progress * 100) + "%";
+  // 🔥 BATTERY
+  updateBattery(progress);
+
+  lucide.createIcons();
 }
 
 function save() {
@@ -293,6 +465,12 @@ function save() {
 }
 
 renderGoals();
+
+if (goals.length > 0) {
+  currentGoalIndex = 0;
+  renderGoals();
+  renderMountain();
+}
 </script>
 
 </body>
