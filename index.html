@@ -409,41 +409,6 @@ renderGoals();      // 🔥 THIS WAS MISSING
 renderMountain();
 }
 
-function updateBattery(progress) {
-  const level = document.getElementById("batteryLevel");
-  const text = document.getElementById("batteryText");
-
-  level.innerHTML = "";
-
-  const segments = 5; // more professional
-  const active = Math.round(progress * segments);
-
-  let colorClass = "green";
-  if (progress === 0) colorClass = "red";
-  else if (progress < 0.5) colorClass = "yellow";
-
-  for (let i = 0; i < segments; i++) {
-    const seg = document.createElement("div");
-    seg.className = "segment";
-
-    if (i < active) {
-      seg.classList.add(colorClass, "active");
-
-      // smooth fill animation
-      seg.style.transform = "translateY(10px)";
-      seg.style.opacity = "0";
-
-      setTimeout(() => {
-        seg.style.transform = "translateY(0)";
-        seg.style.opacity = "1";
-      }, i * 70);
-    }
-
-    level.appendChild(seg);
-  }
-
-  text.innerText = Math.round(progress * 100) + "%";
-}
 
 function renderMountain() {
   const svg = document.getElementById("mountain");
