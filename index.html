@@ -256,7 +256,6 @@ svg {
   height: 20px;
   filter: brightness(1.5) contrast(1.3)
           drop-shadow(0 0 6px rgba(59,130,246,0.6));
-  background: ;
 }
 
 .deleteIcon:hover {
@@ -281,6 +280,41 @@ svg {
   filter: drop-shadow(0 0 6px rgba(34,197,94,0.3));
 }
 
+#toastMsg {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-10px);
+  background: #020617;
+  color: #e2e8f0;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  font-size: 13px;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  z-index: 999;
+}
+
+#toastMsg.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@keyframes shake {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+  100% { transform: translateX(0); }
+}
+
+.shake {
+  animation: shake 0.35s ease;
+}
+
 .value {
   font-size: 18px;
   font-weight: bold;
@@ -295,6 +329,8 @@ svg {
 </head>
 
 <body>
+
+<div id="toastMsg"></div>
 
 <div class="navbar">
   <img src="icons/mountain.png" class="logoImg">
@@ -425,6 +461,42 @@ function generateMiniBattery(tasks) {
   }
 
   return html;
+}
+
+function shakeNode(el, message = "Invalid action") {
+  el.animate([
+    { transform: "translateX(0)" },
+    { transform: "translateX(-4px)" },
+    { transform: "translateX(4px)" },
+    { transform: "translateX(-3px)" },
+    { transform: "translateX(3px)" },
+    { transform: "translateX(0)" }
+  ], {
+    duration: 300,
+    iterations: 1
+  });
+
+  showMessage(message);
+}
+
+function showMessage(text) {
+  const msg = document.getElementById("toastMsg");
+  msg.innerText = text;
+  msg.classList.add("show");
+
+  setTimeout(() => {
+    msg.classList.remove("show");
+  }, 1500);
+}
+
+function triggerShake() {
+  const el = document.getElementById("mountain");
+
+  el.classList.add("shake");
+
+  setTimeout(() => {
+    el.classList.remove("shake");
+  }, 350);
 }
 
 function renderGoals() {
@@ -574,36 +646,165 @@ const points = tasks.map((t, i) => {
   // 🔥 POINTS + CLICK LOGIC
   const firstPending = tasks.findIndex(t => !t.done);
 
-  points.forEach((p, i) => {
-    const task = tasks[i];
+points.forEach((p, i) => {
+  const task = tasks[i];
 
-    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    circle.setAttribute("cx", p.x);
-    circle.setAttribute("cy", p.y);
+  // 🔥 GROUP (important)
+  const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
-    if (task.done) {
-      circle.setAttribute("fill", "#22c55e");
-      circle.setAttribute("r", 6);
-    } else if (i === firstPending) {
-      circle.setAttribute("fill", "#facc15");
-      circle.setAttribute("r", 8);
-    } else {
-      circle.setAttribute("fill", "#64748b");
-      circle.setAttribute("r", 6);
-      circle.setAttribute("opacity", "0.5");
-    }
+  // 🔥 MAIN CIRCLE
+  const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  circle.setAttribute("cx", p.x);
+  circle.setAttribute("cy", p.y);
+  circle.setAttribute("r", 8);
+  circle.style.cursor = "pointer";
 
-    circle.onclick = () => {
-  if (i === firstPending) task.done = true;
-  else if (i === firstPending - 1) task.done = false;
+  if (task.done) {
+    circle.setAttribute("fill", "#22c55e");
+  } else if (i === firstPending) {
+    circle.setAttribute("fill", "#facc15");
+  } else {
+    circle.setAttribute("fill", "#64748b");
+    circle.setAttribute("opacity", "0.5");
+  }
 
+    // ⭐ highlight last node when all tasks complete
+  if (firstPending === -1 && i === tasks.length - 1) {
+    circle.setAttribute("stroke", "#22c55e");
+    circle.setAttribute("stroke-width", "3");
+  }
+
+  group.appendChild(circle);
+
+  // 🔥 TOOLTIP BOX
+const tooltip = document.createElementNS("http://www.w3.org/2000/svg", "g");
+tooltip.style.display = "none";
+
+    // background
+    const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    bg.setAttribute("x", p.x - 45);
+    bg.setAttribute("y", p.y - 55);
+    bg.setAttribute("width", 90);
+    bg.setAttribute("height", 36);
+    bg.setAttribute("rx", 8);
+
+
+    bg.setAttribute("fill", "#020617");
+    bg.setAttribute("stroke", "#334155");
+
+    // COMPLETE BUTTON
+    const completeText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    completeText.setAttribute("x", p.x - 20);
+    completeText.setAttribute("y", p.y - 32);
+    completeText.setAttribute("fill", task.done ? "#475569" : "#22c55e"); // disabled if done
+    completeText.setAttribute("font-size", "11");
+    completeText.style.cursor = task.done ? "not-allowed" : "pointer";
+    completeText.textContent = "✔";
+
+    // UNDO BUTTON
+    const undoText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    undoText.setAttribute("x", p.x + 10);
+    undoText.setAttribute("y", p.y - 32);
+    undoText.setAttribute("fill", task.done ? "#facc15" : "#475569"); // enabled only if done
+    undoText.setAttribute("font-size", "11");
+    undoText.style.cursor = task.done ? "pointer" : "not-allowed";
+    undoText.textContent = "⏸";
+
+    tooltip.appendChild(bg);
+    tooltip.appendChild(completeText);
+    tooltip.appendChild(undoText);
+
+    group.appendChild(tooltip);
+
+  let hoverTimeout;
+
+  group.addEventListener("mouseenter", () => {
+    clearTimeout(hoverTimeout);
+    tooltip.style.display = "block";
+  });
+
+  group.addEventListener("mouseleave", () => {
+    hoverTimeout = setTimeout(() => {
+      tooltip.style.display = "none";
+    }, 200); // delay gives time to reach buttons
+  });
+
+  // COMPLETE CLICK
+completeText.onclick = (e) => {
+  e.stopPropagation();
+
+  if (task.done) return; // disabled
+
+  // only allow next pending
+  // trying to skip task
+if (i !== firstPending) {
+  shakeNode(circle, "Complete previous task first");
+  return;
+}
+
+  task.done = true;
   save();
-  renderGoals();     // 🔥 UPDATE BATTERY
+  renderGoals();
+  renderMountain();
+};
+
+// UNDO CLICK
+undoText.onclick = (e) => {
+  e.stopPropagation();
+
+  if (!task.done) return; // disabled
+
+  // only allow undo last completed
+  const lastCompleted = tasks.map(t => t.done).lastIndexOf(true);
+
+  // wrong undo
+if (i !== lastCompleted) {
+  shakeNode(circle, "Undo latest task only");
+  return;
+}
+
+  task.done = false;
+  save();
+  renderGoals();
   renderMountain();
 };
 
 
-    svg.appendChild(circle);
+  // 🔥 CLICK LOGIC
+  group.onclick = () => {
+  const firstPending = tasks.findIndex(t => !t.done);
+
+  // 🔥 CASE 1: still tasks pending
+  if (firstPending !== -1) {
+
+    if (i === firstPending) {
+      task.done = true;
+    }
+    else if (i === firstPending - 1) {
+      task.done = false;
+    }
+    else {
+      triggerShake();
+      return;
+    }
+
+  } 
+  // 🔥 CASE 2: ALL COMPLETED → allow undo last task
+  else {
+    if (i === tasks.length - 1) {
+      task.done = false;
+    } else {
+      triggerShake();
+      return;
+    }
+  }
+
+  save();
+  renderGoals();
+  renderMountain();
+};
+
+  svg.appendChild(group);
 
     // LABEL
     const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -627,10 +828,6 @@ const points = tasks.map((t, i) => {
     firstPending !== -1 ? tasks[firstPending].name : "Done";
   progressPercent.innerText = Math.round(progress * 100) + "%";
 
-  // 🔥 BATTERY
-  updateBattery(progress);
-
-  lucide.createIcons();
 }
 
 function save() {
