@@ -209,6 +209,30 @@ svg {
 .miniSeg.yellow { background: #facc15; }
 .miniSeg.green { background: #22c55e; }
 
+.deleteIcon {
+  width: 18px;
+  height: 18px;
+  color: #f87171;          /* brighter red */
+  cursor: pointer;
+  opacity: 1;
+  padding: 4px;
+  border-radius: 6px;
+  object-fit: contain;
+
+  stroke-width: 2.5;       /* 🔥 thicker icon */
+  transition: all 0.2s ease;
+}
+
+
+
+.deleteIcon:hover {
+  color: black;
+  opacity: 1;
+  transform: scale(1.2);
+  filter: drop-shadow(0 0 6px rgba(239,68,68,0.6));
+  background: rgba(239,68,68,0.15);
+}
+
 .logoImg {
   height: 26px;   /* was ~34 → reduced */
   width: auto;
@@ -247,9 +271,11 @@ svg {
 
 <div class="sidebar">
   <h3>Goals</h3>
+  <div id="goalList"></div>
+   <br>
+  <h3>Add New Task</h3>
   <input class="goalInput" id="goalInput" placeholder="New goal">
   <button onclick="addGoal()">Add</button>
-  <div id="goalList"></div>
 
 </div>
 
@@ -367,19 +393,41 @@ function renderGoals() {
     div.className = "goal " + (i === currentGoalIndex ? "active" : "");
 
     div.innerHTML = `
-  <div class="goalItem">
-    
-    <div class="goalLeft">
-      <img src="icons/goal.png" class="goalIcon">
-      <span>${g.title}</span>
-    </div>
+    <div class="goalItem">
 
-    <div class="miniBattery">
-      ${generateMiniBattery(g.tasks)}
-    </div>
+      <div class="goalLeft">
+        <img src="icons/goal.png" class="goalIcon">
+        <span>${g.title}</span>
+      </div>
 
-  </div>
-`;
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="miniBattery">
+          ${generateMiniBattery(g.tasks)}
+        </div>
+
+        <!-- DELETE BUTTON -->
+        <img src="icons/trash.png" class="deleteIcon">
+      </div>
+
+    </div>
+  `;
+
+    // delete button
+    div.querySelector(".deleteIcon").onclick = (e) => {
+      e.stopPropagation(); // prevent selecting goal
+
+      if (confirm("Delete this goal?")) {
+        goals.splice(i, 1);
+
+        // reset selection safely
+        if (currentGoalIndex === i) currentGoalIndex = null;
+        else if (currentGoalIndex > i) currentGoalIndex--;
+
+        save();
+        renderGoals();
+        renderMountain();
+      }
+    };
 
     div.onclick = () => {
       currentGoalIndex = i;
@@ -420,10 +468,7 @@ function renderMountain() {
   goalTitle.innerText = goal.title;
 
   const tasks = goal.tasks;
-  if (!tasks.length) {
-    updateBattery(0);
-    return;
-  }
+  if (!tasks.length) return;
 
   const width = svg.clientWidth;
   const height = 340;
