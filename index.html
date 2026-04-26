@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Goal Mountain Pro++</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: linear-gradient(135deg, #020617, #0f172a);
+      color: white;
+      font-family: system-ui;
+    }
+
+    .app { display: flex; height: 100vh; }
+
+    .sidebar {
+      width: 260px;
+      background: rgba(255,255,255,0.05);
+      padding: 15px;
+      border-right: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .goal {
+      padding: 10px;
+      margin: 5px 0;
+      background: rgba(255,255,255,0.08);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .goal.active { background: #22c55e; }
+
+    .main { flex: 1; padding: 20px; position: relative; }
+
+    input, button {
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      margin: 5px;
+    }
+
+    button { background: #22c55e; color: white; cursor: pointer; }
+
+    svg {
+      width: 100%;
+      height: 340px;
+      background: #020617;
+      border-radius: 12px;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+      padding: 15px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+    }
+
+    .legend {
+      position: absolute;
+      right: 30px;
+      top: 120px;
+      background: rgba(255,255,255,0.05);
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    .dot { width: 10px; height: 10px; display: inline-block; border-radius: 50%; }
+    .green { background: #22c55e; }
+    .yellow { background: #facc15; }
+    .gray { background: #64748b; }
+
+    .progressBox { text-align: center; margin-top: 20px; }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <div class="sidebar">
+    <h3>Goals</h3>
+    <input id="goalInput" placeholder="New goal">
+    <button onclick="addGoal()">Add</button>
+    <div id="goalList"></div>
+
+    <div class="progressBox">
+      <svg width="100" height="100">
+        <circle cx="50" cy="50" r="40" stroke="#334155" stroke-width="8" fill="none"/>
+        <circle id="progressCircle" cx="50" cy="50" r="40"
+          stroke="#22c55e" stroke-width="8" fill="none"
+          stroke-dasharray="251"
+          stroke-dashoffset="251"
+          transform="rotate(-90 50 50)"
+        />
+      </svg>
+      <div id="progressText">0%</div>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <h2 id="goalTitle">Select Goal</h2>
+
+    <input id="taskName" placeholder="Task">
+    <input id="difficulty" type="number" placeholder="1-10">
+    <button onclick="addTask()">Add Task</button>
+
+    <svg id="mountain"></svg>
+
+    <div class="legend">
+      <div><span class="dot green"></span> Completed</div>
+      <div><span class="dot yellow"></span> Current</div>
+      <div><span class="dot gray"></span> Pending</div>
+    </div>
+
+    <div class="stats">
+      <div>Completed: <span id="completedCount">0</span></div>
+      <div>Current: <span id="currentTask">-</span></div>
+      <div>Pending: <span id="pendingCount">0</span></div>
+      <div>Progress: <span id="progressPercent">0%</span></div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+let goals = JSON.parse(localStorage.getItem("goals")) || [];
+let currentGoalIndex = null;
+
+function addGoal() {
+  const name = goalInput.value;
+  if (!name) return;
+  goals.push({ title: name, tasks: [] });
+  goalInput.value = "";
+  save(); renderGoals();
+}
+
+function renderGoals() {
+  goalList.innerHTML = "";
+  goals.forEach((g, i) => {
+    const div = document.createElement("div");
+    div.className = "goal " + (i === currentGoalIndex ? "active" : "");
+    div.innerText = g.title;
+    div.onclick = () => {
+      currentGoalIndex = i;
+      renderGoals();
+      renderMountain();
+    };
+    goalList.appendChild(div);
+  });
+}
+
+function addTask() {
+  if (currentGoalIndex === null) return;
+
+  const name = taskName.value;
+  const difficulty = parseInt(document.getElementById("difficulty").value);
+
+  if (!name || !difficulty) return;
+
+  goals[currentGoalIndex].tasks.push({ name, difficulty, done: false });
+
+  taskName.value = "";
+  document.getElementById("difficulty").value = "";
+
+  save();
+  renderMountain();
+}
+
+function getPoints(tasks, width) {
+  const padding = 60;
+  const usableWidth = width - padding * 2;
+
+  return tasks.map((t, i) => {
+    const x = tasks.length === 1
+      ? width / 2
+      : padding + (i / (tasks.length - 1)) * usableWidth;
+
+    const variation = Math.random() * 20 - 10;
+    const peakBoost = Math.pow(t.difficulty / 10, 2) * 40;
+
+    const y = 300 - (t.difficulty / 10) * 200 - peakBoost + variation;
+
+    return { x, y };
+  });
+}
+
+function renderMountain() {
+  const svg = document.getElementById("mountain");
+  svg.innerHTML = "";
+
+  if (currentGoalIndex === null) return;
+
+  const goal = goals[currentGoalIndex];
+  goalTitle.innerText = goal.title;
+
+  const points = getPoints(goal.tasks, svg.clientWidth);
+  if (!points.length) return;
+
+  const firstPending = goal.tasks.findIndex(t => !t.done);
+
+  // Gradient
+  const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+  defs.innerHTML = `
+    <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#22c55e" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#22c55e" stop-opacity="0.1"/>
+    </linearGradient>`;
+  svg.appendChild(defs);
+
+  let path = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    path += ` L ${points[i].x} ${points[i].y}`;
+  }
+  path += ` L ${points[points.length - 1].x} 340 L 0 340 Z`;
+
+  const mountain = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  mountain.setAttribute("d", path);
+  mountain.setAttribute("fill", "url(#grad)");
+  svg.appendChild(mountain);
+
+  let completed = goal.tasks.filter(t => t.done).length;
+  let progress = completed / goal.tasks.length || 0;
+
+  // vertical lines
+  points.forEach(p => {
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", p.x);
+    line.setAttribute("y1", p.y);
+    line.setAttribute("x2", p.x);
+    line.setAttribute("y2", 340);
+    line.setAttribute("stroke", "#334155");
+    line.setAttribute("stroke-dasharray", "4");
+    svg.appendChild(line);
+  });
+
+  // points
+  points.forEach((p, i) => {
+    const task = goal.tasks[i];
+
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute("cx", p.x);
+    circle.setAttribute("cy", p.y);
+
+    if (task.done) {
+      circle.setAttribute("fill", "#22c55e");
+      circle.setAttribute("r", 6);
+    } else if (i === firstPending) {
+      circle.setAttribute("fill", "#facc15");
+      circle.setAttribute("r", 8);
+    } else {
+      circle.setAttribute("fill", "#64748b");
+      circle.setAttribute("r", 6);
+      circle.setAttribute("opacity", "0.5");
+    }
+
+    circle.onclick = () => {
+      if (i === firstPending) goal.tasks[i].done = true;
+      else if (i === firstPending - 1) goal.tasks[i].done = false;
+      save();
+      renderMountain();
+    };
+
+    svg.appendChild(circle);
+
+    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    text.setAttribute("x", p.x);
+    text.setAttribute("y", p.y - 10);
+    text.setAttribute("text-anchor", "middle");
+    text.setAttribute("fill", "white");
+    text.setAttribute("font-size", "10");
+    text.textContent = task.name.slice(0, 10);
+    svg.appendChild(text);
+  });
+
+  // stats
+  completedCount.innerText = completed;
+  pendingCount.innerText = goal.tasks.length - completed;
+  currentTask.innerText =
+    firstPending !== -1 ? goal.tasks[firstPending].name : "Done";
+  progressPercent.innerText = Math.round(progress * 100) + "%";
+
+  const offset = 251 - (251 * progress);
+  progressCircle.setAttribute("stroke-dashoffset", offset);
+  progressText.innerText = Math.round(progress * 100) + "%";
+}
+
+function save() {
+  localStorage.setItem("goals", JSON.stringify(goals));
+}
+
+renderGoals();
+</script>
+
+</body>
+</html>
