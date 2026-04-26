@@ -61,7 +61,7 @@ body {
 .goalItem {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between; /* IMPORTANT */
 }
 
 .goal.active img {
@@ -75,39 +75,58 @@ svg.lucide {
 }
 
 /* SEGMENT BATTERY */
+/* PROFESSIONAL BATTERY */
 .battery {
   width: 100%;
-  height: 40px;
-  border: 2px solid #64748b;
-  border-radius: 10px;
-  padding: 4px;
-  display: flex;
-  gap: 4px;
-  margin-top: 20px;
+  height: 28px;              /* ↓ reduced from ~44 */
+  border-radius: 8px;
+  padding: 3px;              /* ↓ tighter */
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.4);
 }
 
 .battery-level {
   display: flex;
-  gap: 4px;
-  width: 100%;
+  gap: 5px;                 /* ↓ smaller gap */
+  height: 100%;
 }
 
 .segment {
   flex: 1;
+  border-radius: 4px;       /* ↓ sharper look */
   background: #1e293b;
-  border-radius: 4px;
+  transition: all 0.3s ease;
 }
 
-.red { background: #ef4444; }
-.yellow { background: #facc15; }
-.green { background: #22c55e; }
+/* glow fill */
+.segment.active::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: inherit;
+  opacity: 0.8;
+  filter: blur(6px);
+}
+
+/* COLORS */
+.red {
+  background: linear-gradient(180deg,#ef4444,#7f1d1d);
+}
+
+.yellow {
+  background: linear-gradient(180deg,#facc15,#854d0e);
+}
+
+.green {
+  background: linear-gradient(180deg,#22c55e,#14532d);
+}
 
 .batteryText {
-  margin-top: 8px;
-  font-size: 14px;
-  color: #e2e8f0;
+  margin-top: 5px;          /* ↓ closer to battery */
+  font-size: 12px;          /* ↓ smaller text */
+  color: #cbd5f5;
 }
-
 /* MAIN */
 .main {
   flex: 1;
@@ -136,6 +155,7 @@ svg {
 
 .goalInput{
   background: rgba(220, 208, 208, 0.08);
+  color: #e2e8f0;
 }
 
 /* STATS */
@@ -155,10 +175,39 @@ svg {
   background: rgba(255,255,255,0.05);
 }
 
+.goalItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.goalLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .icon {
   width: 20px;
   height: 20px;
 }
+
+.miniBattery {
+  display: flex;
+  gap: 2px;
+}
+
+.miniSeg {
+  width: 6px;
+  height: 14px;
+  border-radius: 2px;
+  background: #1e293b;
+  transition: all 0.3s ease;
+}
+
+.miniSeg.red { background: #ef4444; }
+.miniSeg.yellow { background: #facc15; }
+.miniSeg.green { background: #22c55e; }
 
 .logoImg {
   height: 26px;   /* was ~34 → reduced */
@@ -202,11 +251,6 @@ svg {
   <button onclick="addGoal()">Add</button>
   <div id="goalList"></div>
 
-  <div class="battery">
-    <div class="battery-level" id="batteryLevel"></div>
-  </div>
-
-  <div id="batteryText" class="batteryText">0%</div>
 </div>
 
 <div class="main">
@@ -269,6 +313,52 @@ function addGoal() {
   renderGoals();
 }
 
+function getPoints(tasks, width, height) {
+  const paddingX = 50;
+  const paddingY = 40;
+
+  const usableWidth = width - paddingX * 2;
+  const stepX = tasks.length > 1 ? usableWidth / (tasks.length - 1) : 0;
+
+  return tasks.map((t, i) => {
+    const x = paddingX + i * stepX;
+
+    // scale difficulty dynamically
+    const y =
+      height -
+      paddingY -
+      (Math.min(t.difficulty, 10) / 10) * (height - 100);
+
+    return { x, y };
+  });
+}
+
+function generateMiniBattery(tasks) {
+  if (!tasks.length) return "";
+
+  const completed = tasks.filter(t => t.done).length;
+  const total = tasks.length;
+  const progress = completed / total;
+
+  const segments = 5;
+  const active = Math.round(progress * segments);
+
+  // 🔥 RANGE BASED COLOR
+  const percent = progress * 100;
+
+  let color = "red";
+  if (percent > 30 && percent <= 60) color = "yellow";
+  else if (percent > 60) color = "green";
+
+  let html = "";
+
+  for (let i = 0; i < segments; i++) {
+    html += `<div class="miniSeg ${i < active ? color : ""}"></div>`;
+  }
+
+  return html;
+}
+
 function renderGoals() {
   goalList.innerHTML = "";
 
@@ -277,10 +367,19 @@ function renderGoals() {
     div.className = "goal " + (i === currentGoalIndex ? "active" : "");
 
     div.innerHTML = `
-      <div class="goalItem">
-        <img src="icons/goal.png" class="goalIcon"> ${g.title}
-      </div>
-    `;
+  <div class="goalItem">
+    
+    <div class="goalLeft">
+      <img src="icons/goal.png" class="goalIcon">
+      <span>${g.title}</span>
+    </div>
+
+    <div class="miniBattery">
+      ${generateMiniBattery(g.tasks)}
+    </div>
+
+  </div>
+`;
 
     div.onclick = () => {
       currentGoalIndex = i;
@@ -306,7 +405,8 @@ function addTask() {
   document.getElementById("difficulty").value = "";
 
   save();
-  renderMountain();
+renderGoals();      // 🔥 THIS WAS MISSING
+renderMountain();
 }
 
 function updateBattery(progress) {
@@ -315,20 +415,31 @@ function updateBattery(progress) {
 
   level.innerHTML = "";
 
-  const segments = 5;
+  const segments = 5; // more professional
   const active = Math.round(progress * segments);
 
-  let color = "green";
-  if (progress === 0) color = "red";
-  else if (progress < 0.5) color = "yellow";
+  let colorClass = "green";
+  if (progress === 0) colorClass = "red";
+  else if (progress < 0.5) colorClass = "yellow";
 
   for (let i = 0; i < segments; i++) {
-    const div = document.createElement("div");
-    div.className = "segment";
+    const seg = document.createElement("div");
+    seg.className = "segment";
 
-    if (i < active) div.classList.add(color);
+    if (i < active) {
+      seg.classList.add(colorClass, "active");
 
-    level.appendChild(div);
+      // smooth fill animation
+      seg.style.transform = "translateY(10px)";
+      seg.style.opacity = "0";
+
+      setTimeout(() => {
+        seg.style.transform = "translateY(0)";
+        seg.style.opacity = "1";
+      }, i * 70);
+    }
+
+    level.appendChild(seg);
   }
 
   text.innerText = Math.round(progress * 100) + "%";
@@ -424,11 +535,14 @@ function renderMountain() {
     }
 
     circle.onclick = () => {
-      if (i === firstPending) task.done = true;
-      else if (i === firstPending - 1) task.done = false;
-      save();
-      renderMountain();
-    };
+  if (i === firstPending) task.done = true;
+  else if (i === firstPending - 1) task.done = false;
+
+  save();
+  renderGoals();     // 🔥 UPDATE BATTERY
+  renderMountain();
+};
+
 
     svg.appendChild(circle);
 
