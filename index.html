@@ -467,15 +467,22 @@ function renderMountain() {
   const usableWidth = width - padding * 2;
 
   // 🔥 CREATE POINTS
-  const points = tasks.map((t, i) => {
-    const x = tasks.length === 1
-      ? width / 2
-      : padding + (i / (tasks.length - 1)) * usableWidth;
+  // 🔥 FIND MAX DIFFICULTY (AUTO SCALE)
+const maxDifficulty = Math.max(...tasks.map(t => t.difficulty), 10);
 
-    const y = height - (t.difficulty / 10) * 220 - 40;
+// 🔥 CREATE POINTS (DYNAMIC HEIGHT)
+const points = tasks.map((t, i) => {
+  const x = tasks.length === 1
+    ? width / 2
+    : padding + (i / (tasks.length - 1)) * usableWidth;
 
-    return { x, y };
-  });
+  // normalize based on max difficulty
+  const normalized = t.difficulty / maxDifficulty;
+
+  const y = height - (normalized * (height - 100)) - 40;
+
+  return { x, y };
+});
 
   // 🔥 GRADIENT
   const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
@@ -493,7 +500,7 @@ function renderMountain() {
     path += ` L ${p.x} ${p.y}`;
   });
 
-  path += ` L ${points[points.length - 1].x} ${height} Z`;
+  path += ` L ${width} ${height} Z`;
 
   const mountain = document.createElementNS("http://www.w3.org/2000/svg", "path");
   mountain.setAttribute("d", path);
