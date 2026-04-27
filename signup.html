@@ -2,6 +2,7 @@
 <html>
 <head>
 <title>Sign Up</title>
+
 <style>
 body {
   background:#020617;
@@ -32,6 +33,7 @@ button {
   background:#22c55e;
   color:white;
 }
+
 .link {
   color:#38bdf8;
   cursor:pointer;
@@ -45,6 +47,7 @@ button {
 <div class="box">
   <h3>Sign Up</h3>
 
+  <input id="username" placeholder="Username">
   <input id="email" placeholder="Email">
   <input id="password" type="password" placeholder="Password">
 
@@ -56,28 +59,25 @@ button {
 
 <script type="module">
 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+
 import {
+  getAuth,
+  createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
 
-window.googleSignup = async () => {
-  const provider = new GoogleAuthProvider();
-
-  try {
-    await signInWithPopup(auth, provider);
-    alert("Google account created");
-    window.location.href = "index.html";
-  } catch (e) {
-    console.error(e);
-    alert(e.message);
-  }
-};
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
 import {
-  getAuth,
-  createUserWithEmailAndPassword
-} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc,
+  collection,
+  query,
+  where,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCD4VCZqadBElJhw6MilaFl2TomAHfxdmA",
@@ -85,34 +85,106 @@ const firebaseConfig = {
   projectId: "mounty-tracker",
   storageBucket: "mounty-tracker.appspot.com",
   messagingSenderId: "978463913179",
-  appId: "1:978463913179:web:b5e9e4928b1c9cc8e888fe",
-  measurementId: "G-6PY52GQ6XV"
-
+  appId: "1:978463913179:web:b5e9e4928b1c9cc8e888fe"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
+
+// =======================
+// 📧 EMAIL SIGNUP
+// =======================
 window.register = async () => {
+  let username = document.getElementById("username").value.trim().toLowerCase();
   const email = document.getElementById("email").value.trim();
   const pass = document.getElementById("password").value.trim();
 
-  if (!email || !pass) {
-    alert("Enter email & password");
+  if (!username || !email || !pass) {
+    alert("Fill all fields");
+    return;
+  }
+
+  if (pass.length < 6) {
+    alert("Password must be at least 6 characters");
     return;
   }
 
   try {
-    await createUserWithEmailAndPassword(auth, email, pass);
-    alert("Account created");
+    // 🔥 check username in O(1)
+    const usernameRef = doc(db, "usernames", username);
+    const usernameSnap = await getDoc(usernameRef);
+
+    if (usernameSnap.exists()) {
+      alert("Username already taken");
+      return;
+    }
+
+    // 🔐 create auth user
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    const uid = cred.user.uid;
+
+    // 🔥 store user profile
+    await setDoc(doc(db, "users", uid), {
+      username,
+      email
+    });
+
+    // 🔥 store username → uid mapping
+    await setDoc(usernameRef, {
+      uid: uid
+    });
+
+    alert("Account created 🚀");
     window.location.href = "index.html";
+
   } catch (e) {
     console.error(e);
     alert(e.message);
   }
 };
 
-window.goLogin = () => location.href = "login.html";
+
+// =======================
+// 🔐 GOOGLE SIGNUP
+// =======================
+window.googleSignup = async () => {
+  const provider = new GoogleAuthProvider();
+
+  const result = await signInWithPopup(auth, provider);
+  const user = result.user;
+
+  let username = (user.displayName || "user").toLowerCase();
+
+  const usernameRef = doc(db, "usernames", username);
+  const snap = await getDoc(usernameRef);
+
+  // 🔥 avoid collision
+  if (snap.exists()) {
+    username = username + "_" + Date.now();
+  }
+
+  await setDoc(doc(db, "users", user.uid), {
+    username,
+    email: user.email
+  });
+
+  await setDoc(doc(db, "usernames", username), {
+    uid: user.uid
+  });
+
+  window.location.href = "index.html";
+};
+
+
+// =======================
+// 🔁 NAVIGATION
+// =======================
+window.goLogin = () => {
+  window.location.href = "login.html";
+};
+
 </script>
 
 </body>

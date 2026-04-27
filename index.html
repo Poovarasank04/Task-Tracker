@@ -418,6 +418,14 @@ svg {
 
 
 <script type="module">
+
+import {
+  getFirestore,
+  collection,
+  getDoc,
+  doc,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-analytics.js";
 import {
@@ -429,6 +437,7 @@ import {
   onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+
 
 // 🔑 your config (same)
 const firebaseConfig = {
@@ -445,6 +454,9 @@ const firebaseConfig = {
 // 🚀 init
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+
+const db = getFirestore(app);
+
 
 // =======================
 // 🔐 GOOGLE LOGIN
@@ -508,6 +520,33 @@ window.login = async () => {
     showMessage(e.message);
   }
 };
+
+
+window.loadFromFirebase = async () => {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const ref = doc(db, "users", user.uid);
+  const snap = await getDoc(ref);
+
+  if (snap.exists()) {
+    goals = snap.data().goals || [];
+  }
+
+  renderGoals();
+  renderMountain();
+};
+
+window.saveToFirebase = async (goals) => {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  await setDoc(
+    doc(db, "users", user.uid),
+    { goals },
+    { merge: true }
+  );
+};
 // =======================
 // 🚪 LOGOUT
 // =======================
@@ -521,6 +560,7 @@ onAuthStateChanged(auth, (user) => {
   const userBox = document.getElementById("userBox");
 
   if (user) {
+    loadFromFirebase();
     loginBtn.style.display = "none";
     userBox.style.display = "flex";
     document.getElementById("userEmail").innerText =
@@ -979,6 +1019,9 @@ if (i !== lastCompleted) {
 
 function save() {
   localStorage.setItem("goals", JSON.stringify(goals));
+  if (window.saveToFirebase) {
+    window.saveToFirebase(goals); // ⭐ CLOUD SAVE
+  }
 }
 
 renderGoals();
