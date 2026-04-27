@@ -11,6 +11,7 @@ body {
   background: linear-gradient(135deg, #020617, #0f172a);
   color: white;
   font-family: system-ui;
+  display: none;
 }
 
 /* NAVBAR */
@@ -335,7 +336,17 @@ svg {
 <div class="navbar">
   <img src="icons/mountain.png" class="logoImg">
   <span>Mounty-tracker</span>
+
+  <div style="margin-left:auto;">
+    <button id="loginBtn" onclick="goLogin()">Sign In</button>
+
+    <div id="userBox" style="display:none; align-items:center; gap:10px;">
+      <span id="userEmail"></span>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </div>
 </div>
+
 
 <div class="app">
 
@@ -404,14 +415,7 @@ svg {
 </div>
 </div>
 
-<div id="authBox">
-  <input id="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Password">
 
-  <button onclick="register()">Register</button>
-  <button onclick="login()">Login</button>
-  <button onclick="googleLogin()">Google</button>
-</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
@@ -484,17 +488,26 @@ window.register = async () => {
 // 🔑 LOGIN
 // =======================
 window.login = async () => {
-  const email = document.getElementById("email").value;
-  const pass = document.getElementById("password").value;
+  const emailInput = document.getElementById("email");
+  const passInput = document.getElementById("password");
+
+  const email = emailInput.value;
+  const pass = passInput.value;
+
+  if (!email || !pass) {
+    showMessage("Enter email & password");
+    return;
+  }
 
   try {
     await signInWithEmailAndPassword(auth, email, pass);
     showMessage("Login success");
+
+    window.location.href = "index.html"; // redirect after login
   } catch (e) {
     showMessage(e.message);
   }
 };
-
 // =======================
 // 🚪 LOGOUT
 // =======================
@@ -504,18 +517,43 @@ window.logout = () => signOut(auth);
 // 👤 USER STATE
 // =======================
 onAuthStateChanged(auth, (user) => {
+  const loginBtn = document.getElementById("loginBtn");
+  const userBox = document.getElementById("userBox");
+
   if (user) {
-    document.getElementById("authBox").style.display = "none";
-    showMessage("Welcome " + (user.email || "User"));
+    loginBtn.style.display = "none";
+    userBox.style.display = "flex";
+    document.getElementById("userEmail").innerText =
+      user.email || "User";
+
+    document.body.style.display = "block";
   } else {
-    document.getElementById("authBox").style.display = "block";
+    // allow login page only
+    if (!window.location.pathname.includes("login.html")) {
+      window.location.href = "login.html";
+    }
   }
 });
+
+setTimeout(() => {
+  if (document.body.style.display === "none") {
+    document.body.style.display = "block";
+    showMessage("Loading issue — showing anyway");
+  }
+}, 3000);
 </script>
 
 <script>
 let goals = JSON.parse(localStorage.getItem("goals")) || [];
 let currentGoalIndex = null;
+
+function goLogin() {
+  window.location.href = "login.html";
+}
+
+function goSignup() {
+  window.location.href = "signup.html";
+}
 
 function addGoal() {
   const name = goalInput.value;
